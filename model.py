@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import BertModel, BertTokenizer
-
+from torch.optim import Adam,SGD
 
 class Model(nn.Module):
     """
@@ -73,3 +73,12 @@ class Model(nn.Module):
 
         # 计算损失
         return self.loss(predict, target)
+
+#优化器的选择
+def choose_optimizer(config, model):
+    optimizer = config["optimizer"]
+    learning_rate = config["learning_rate"]
+    if optimizer == "adam":
+        return Adam(model.parameters(), lr=learning_rate)
+    elif optimizer == "sgd":
+        return SGD(model.parameters(), lr=learning_rate)

@@ -3,7 +3,7 @@ import torch
 import os
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertTokenizer
-import Config  # 显式导入配置模块
+
 
 
 class DataGenerator(Dataset):

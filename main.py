@@ -1,0 +1,82 @@
+import logging
+import numpy as np
+import torch
+from Config import Config
+from loader import load_data
+from model import Model
+from model import choose_optimizer
+import os
+from evaluate import Evaluator
+import random
+
+#[DEBUG, INFO, WARNING, ERROR, CRITICAL]
+logging.basicConfig(level=logging.INFO, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+"""
+模型训练主程序
+"""
+
+
+seed = Config["seed"]
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+def main(config):
+    if not os.path.isdir(config['model_path']):
+      os.mkdir(config['model_path'])
+    train_data = load_data(config["train_data_path"], config)
+    device = torch.device(Config["device"])
+
+    model = Model(Config).to(device)
+    optimizer = choose_optimizer(model, Config)
+
+    evaluator = Evaluator(Config,model,logging)
+    for epoch in range(config['epochs']):
+        epoch += 1
+        model.train()
+        logger.info("epoch %d begin" % epoch)
+        train_loss = []
+        for index, batch_data in enumerate(train_data):
+           batch_data = [data.to(device) for data in batch_data]
+           optimizer.zero_grad()
+           input_ids, labels = batch_data  # 输入变化时这里需要修改，比如多输入，多输出的情况
+           loss = model(input_ids, labels)
+           loss.backward()
+           optimizer.step()
+
+           train_loss.append(loss.item())
+           if index % int(len(train_data) / 2) == 0:
+               logger.info("batch loss %f" % loss)
+        logger.info("epoch average loss: %f" % np.mean(train_loss))
+        acc = evaluator.evaluate(epoch)
+
+    model_path = os.path.join(config["model_path"], "model.pth")
+    torch.save(model.state_dict(), model_path)  #保存模型权重
+    return acc
+
+if __name__ == "__main__":
+    main(Config)
+
+    # for model in ["cnn"]:
+    #     Config["model_type"] = model
+    #     print("最后一轮准确率：", main(Config), "当前配置：", Config["model_type"])
+
+    #对比所有模型
+    #中间日志可以关掉，避免输出过多信息
+    # 超参数的网格搜索
+    for lr in [1e-3, 1e-4]:
+        Config["learning_rate"] = lr
+        for hidden_size in [128]:
+            Config["hidden_size"] = hidden_size
+            for batch_size in [64, 128]:
+                Config["batch_size"] = batch_size
+                for pooling_style in ["avg", 'max']:
+                    Config["pooling_style"] = pooling_style
+                    print("最后一轮准确率：", main(Config), "当前配置：", Config)
+
+
+
+
+
