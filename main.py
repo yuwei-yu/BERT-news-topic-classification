@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import torch
-from Config import Config
+from config import Config
 from loader import load_data
 from model import Model
 from model import choose_optimizer
@@ -45,7 +45,7 @@ def main(config):
     # 初始化模型并将其移动到指定设备
     model = Model(Config).to(device)
     # 根据配置选择优化器
-    optimizer = choose_optimizer(model, Config)
+    optimizer = choose_optimizer(Config, model)
 
     # 初始化评估器
     evaluator = Evaluator(Config, model, logging)

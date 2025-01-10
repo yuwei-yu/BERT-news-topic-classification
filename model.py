@@ -2,6 +2,18 @@ import torch
 import torch.nn as nn
 from transformers import BertModel, BertTokenizer
 from torch.optim import Adam,SGD
+import os
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+from huggingface_hub import snapshot_download
+from config import Config
+
+# 替换为自己的存储路径
+model_path = Config["model_path"]
+snapshot_download(
+            repo_id="bert-base-chinese",
+            local_dir=model_path,
+            max_workers=8
+        )
 
 class Model(nn.Module):
     """
@@ -17,24 +29,17 @@ class Model(nn.Module):
     def __init__(self, config):
         super(Model, self).__init__()
         # 确保配置项存在且类型正确
-        required_keys = ["pretrain_model_path", "class_num", "pooling_type"]
+        required_keys = [ "class_num", "pooling_type"]
         for key in required_keys:
             if key not in config:
                 raise ValueError(f"Missing required configuration key: {key}")
 
         # 加载预训练的BERT模型
-        self.bert = BertModel.from_pretrained(config["pretrain_model_path"], return_dict=False)
+        self.bert = BertModel.from_pretrained(model_path, return_dict=False)
         self.hidden_size = self.bert.config.hidden_size
         self.num_class = config["class_num"]
         self.pooling_type = config["pooling_type"]
 
-        # 初始化池化层
-        if self.pooling_type == "max":
-            self.pooling_layer = nn.MaxPool1d(self.hidden_size)
-        elif self.pooling_type == "avg":
-            self.pooling_layer = nn.AvgPool1d(self.hidden_size)
-        else:
-            raise ValueError("Unsupported pooling type. Choose 'max' or 'avg'.")
 
         # 初始化分类层
         self.classify = nn.Linear(self.hidden_size, self.num_class)
@@ -58,6 +63,14 @@ class Model(nn.Module):
 
         # 通过BERT模型获取序列的编码输出
         seq_output, _ = self.bert(input_ids)
+        print(seq_output.shape)
+        # 初始化池化层
+        if self.pooling_type == "max":
+            self.pooling_layer = nn.MaxPool1d(seq_output.shape[1])
+        elif self.pooling_type == "avg":
+            self.pooling_layer = nn.AvgPool1d(seq_output.shape[1])
+        else:
+            raise ValueError("Unsupported pooling type. Choose 'max' or 'avg'.")
 
         # 执行池化操作
         x = self.pooling_layer(seq_output.permute(0, 2, 1)).squeeze(-1)
@@ -66,13 +79,9 @@ class Model(nn.Module):
 
         if target is None:
             return predict
-
-        # 验证 target 的形状
-        if target.dim() != 1:
-            raise ValueError("target should be a 1D tensor with shape (batch_size)")
-
+        print(predict.shape,target.shape)
         # 计算损失
-        return self.loss(predict, target)
+        return self.loss(predict, target.squeeze())
 
 #优化器的选择
 def choose_optimizer(config, model):
