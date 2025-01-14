@@ -33,7 +33,7 @@ class Model(nn.Module):
         print(self.bert.config)
         self.hidden_size = self.bert.config.hidden_size
         self.num_class = config["class_num"]
-        self.pooling_type = config["pooling_style"]
+        self.pooling_style = config["pooling_style"]
 
 
         # 初始化分类层
