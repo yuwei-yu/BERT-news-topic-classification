@@ -21,7 +21,7 @@ class Model(nn.Module):
     def __init__(self, config):
         super(Model, self).__init__()
         # 确保配置项存在且类型正确
-        required_keys = [ "class_num", "pooling_type"]
+        required_keys = [ "class_num", "pooling_style"]
         for key in required_keys:
             if key not in config:
                 raise ValueError(f"Missing required configuration key: {key}")
@@ -33,7 +33,7 @@ class Model(nn.Module):
         print(self.bert.config)
         self.hidden_size = self.bert.config.hidden_size
         self.num_class = config["class_num"]
-        self.pooling_type = config["pooling_type"]
+        self.pooling_type = config["pooling_style"]
 
 
         # 初始化分类层
@@ -60,9 +60,9 @@ class Model(nn.Module):
         seq_output, _ = self.bert(input_ids)
         print(seq_output.shape)
         # 初始化池化层
-        if self.pooling_type == "max":
+        if self.pooling_style == "max":
             self.pooling_layer = nn.MaxPool1d(seq_output.shape[1])
-        elif self.pooling_type == "avg":
+        elif self.pooling_style == "avg":
             self.pooling_layer = nn.AvgPool1d(seq_output.shape[1])
         else:
             raise ValueError("Unsupported pooling type. Choose 'max' or 'avg'.")

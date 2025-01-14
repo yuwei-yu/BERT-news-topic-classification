@@ -17,6 +17,6 @@ Config = {
     "seed": 42,
     "num_layer": 2,
     "max_length": 30,
-    "pooling_type": "max",
+    "pooling_style": "max",
     "class_num":18
 }
