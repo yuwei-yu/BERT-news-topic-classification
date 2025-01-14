@@ -10,6 +10,7 @@ from evaluate import Evaluator
 import random
 from utils import *
 from time import time
+
 # 初始化日志配置，设置日志级别和格式
 # [DEBUG, INFO, WARNING, ERROR, CRITICAL]
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +26,6 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
-
 
 def main(config):
     """
@@ -53,7 +53,6 @@ def main(config):
     evaluator = Evaluator(Config, model, logging)
     model_train_logger = {}
     model_train_epoch_logger = []
-    final_loss = 0
     final_acc = 0
     # 开始训练
     for epoch in range(config['epochs']):
@@ -83,7 +82,6 @@ def main(config):
             "loss": np.mean(train_loss),
             "accuracy": acc,
         })
-        final_loss = np.mean(train_loss)
         final_acc = acc
 
     # 保存模型权重
@@ -94,9 +92,7 @@ def main(config):
     model_train_logger['epochs'] = config["epochs"]
     model_train_logger["layers"] = config["num_layer"]
     model_train_logger['accuracy'] = final_acc
-    model_train_logger['train_loss'] = final_loss
     return model_train_logger, model_train_epoch_logger
-
 
 if __name__ == "__main__":
     # # 调用主函数开始训练
@@ -111,17 +107,22 @@ if __name__ == "__main__":
     # 中间日志可以关掉，避免输出过多信息
     # 超参数的网格搜索
     model_train_loggers = []
+    best_acc = 0
+    best_train_logger = []
     for lr in [1e-4, 1e-5]:
         Config["learning_rate"] = lr
         for pooling_style in ["avg", 'max']:
-                    Config["pooling_style"] = pooling_style
-                    start = time.time()
-                    model_train_logger ,epoch_train_data = main(Config)
-                    model_train_loggers.append(model_train_logger)
-                    key = f"lr:{lr}-{pooling_style}"
-                    end = time.time()
-                    print(f"最后一轮准确率：{model_train_logger['accuracy']}, 耗时：{end - start}秒")
-                    print("当前配置：", Config)
+            Config["pooling_style"] = pooling_style
+            for batch_size in [64, 128]:
+                Config["batch_size"] = batch_size
+                model_train_logger, epoch_train_data = main(Config)
+                model_train_loggers.append(model_train_logger)
+                if model_train_logger['accuracy'] > best_acc:
+                    best_acc = model_train_logger['accuracy']
+                    best_train_logger = model_train_logger
+                print("当前配置：", Config)
 
-    save_json_file(model_train_loggers, "model_train_loggers.json")
     generate_performance_table(model_train_loggers)
+    plot_training_progress({
+        "best-result": best_train_logger
+    })

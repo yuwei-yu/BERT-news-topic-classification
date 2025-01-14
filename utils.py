@@ -17,7 +17,6 @@ import json
 #         "model_name": "Model_B",
 #         "epochs": 15,
 #         "learning_rate": 0.0005,
-#         "final_loss": 0.35,
 #         "final_accuracy": 0.88
 #     }
 # ]
