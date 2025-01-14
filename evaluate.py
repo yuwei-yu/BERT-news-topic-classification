@@ -46,7 +46,8 @@ class Evaluator:
         self.stats_dict = {"correct": 0, "wrong": 0}  # 用于存储测试结果
 
         for index, data in enumerate(self.valid_data):
-            input_ids, label = data.to(self.device)
+            data = [d.to(self.device) for d in data]
+            input_ids, label = data
             with torch.no_grad():
                 predict = self.model(input_ids)
                 self.write_state(label, predict)

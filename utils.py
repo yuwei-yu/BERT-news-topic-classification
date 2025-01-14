@@ -83,4 +83,5 @@ def plot_training_progress(epoch_data):
 
     plt.tight_layout()
     plt.show()
+    plt.savefig("training_progress.png")
 

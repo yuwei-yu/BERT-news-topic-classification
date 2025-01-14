@@ -18,4 +18,5 @@ Config = {
     "num_layer": 2,
     "max_length": 30,
     "pooling_type": "max",
+    "class_num":18
 }

@@ -23,7 +23,7 @@ class DataGenerator:
         self.label_to_index = dict((y, x) for x, y in self.index_to_label.items())
         self.config["class_num"] = len(self.index_to_label)
 
-        self.tokenizer = BertTokenizer.from_pretrained(config['model_path'])
+        self.tokenizer = BertTokenizer.from_pretrained(config['pretrain_model_path'])
         self.vocab = load_vocab(config["vocab_path"])
         self.config["vocab_size"] = len(self.vocab)
         self.load()

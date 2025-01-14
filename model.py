@@ -6,15 +6,7 @@ import os
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 from huggingface_hub import snapshot_download
 from config import Config
-
-# 替换为自己的存储路径
-model_path = Config["model_path"]
-snapshot_download(
-            repo_id="bert-base-chinese",
-            local_dir=model_path,
-            max_workers=8
-        )
-
+import time
 class Model(nn.Module):
     """
     用于文本分类的BERT模型。
@@ -35,7 +27,10 @@ class Model(nn.Module):
                 raise ValueError(f"Missing required configuration key: {key}")
 
         # 加载预训练的BERT模型
-        self.bert = BertModel.from_pretrained(model_path, return_dict=False)
+        self.bert = BertModel.from_pretrained(config["pretrain_model_path"], return_dict=False)
+        # 修改bert的layer_num
+
+        print(self.bert.config)
         self.hidden_size = self.bert.config.hidden_size
         self.num_class = config["class_num"]
         self.pooling_type = config["pooling_type"]
